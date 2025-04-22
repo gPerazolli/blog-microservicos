@@ -1,0 +1,53 @@
+
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: authdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  post-service:
+    build: ./post-service
+    ports:
+      - "3001:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/posts
+    depends_on:
+      - mongo
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3002:3000"
+    environment:
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/authdb
+      - JWT_SECRET=supersecret
+    depends_on:
+      - postgres
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "3003:3000"
+    environment:
+      - DB_URL=postgresql://postgres:postgres@postgres:5432/authdb
+    depends_on:
+      - postgres
+
+volumes:
+  mongo_data:
+  pg_data:
